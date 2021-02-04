@@ -1,13 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-The driver file to use a camera that uses XiAPI
+The driver file to use a camera that uses xiapi
 """
 import numpy as np
-
+from ximea import xiapi
+from pynta.model.cameras.base_camera import BaseCamera
+from pynta.model.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
+cam=xiapi.camera()
 #here add in all of the imports
 
 
 #impliment all of these functions
+class Camera(BaseCamera):
+    def __init__(self, camera):
+        super().__init__(camera)
+        self.cam_num = camera
+        self.max_width = 0
+        self.max_height = 0
+        self.width = None
+        self.height = None
+        self.mode = None
+        self.X = None
+        self.Y = None
+        self.friendly_name = None
+        
+        
     @not_implemented
     def initialize(self):
         """
@@ -33,12 +50,6 @@ import numpy as np
         """
         self.mode = mode
 
-    def get_acquisition_mode(self):
-        """
-        Returns the acquisition mode, either continuous or single shot.
-        """
-        return self.mode
-
     @not_implemented
     def acquisition_ready(self):
         """
@@ -46,18 +57,20 @@ import numpy as np
         """
         pass
 
-    @not_implemented
+    #@not_implemented
     def set_exposure(self, exposure):
         """
         Sets the exposure of the camera.
         """
+        self.cam.set_exposure(exposure)
         self.exposure = exposure
 
-    @not_implemented
+    #@not_implemented
     def get_exposure(self):
         """
         Gets the exposure time of the camera.
         """
+        self.exposure=self.cam.get_exposure()
         return self.exposure
 
     @not_implemented
