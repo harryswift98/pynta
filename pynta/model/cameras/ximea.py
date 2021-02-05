@@ -30,6 +30,17 @@ class Camera(BaseCamera):
         """
         Initializes the camera.
         """
+        #i need to add a way to check for cameras
+        
+        self.max_width = 0
+        self.max_height = 0
+        width = cam.get_width
+        height = cam.get_height
+        offsetX=cam.get_offsetX()
+        offsetY=cam.get_offsetY()
+        self.X = (offsetX,offsetX+width)
+        self.Y = (offsetY,offsetY+height)
+        self.friendly_name = None
         self.max_width = self.GetCCDWidth()
         self.max_height = self.GetCCDHeight()
         return True
@@ -48,6 +59,11 @@ class Camera(BaseCamera):
         :param int mode: One of self.MODE_CONTINUOUS, self.MODE_SINGLE_SHOT
         :return:
         """
+        if mode == self.MODE_CONTINUOUS:
+            #find and add way to change acq mode
+        elif mode == self.MODE_SINGLE_SHOT:
+            #do the same for single show
+            
         self.mode = mode
 
     @not_implemented
