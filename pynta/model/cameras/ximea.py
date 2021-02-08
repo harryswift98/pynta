@@ -30,12 +30,19 @@ class Camera(BaseCamera):
         """
         Initializes the camera.
         """
-        #i need to add a way to check for cameras
+        #function checks if camera is attached and opens it if it finds one
+        #need to figure out what happens if >2 devices
+        if cam.get_pNumberDevices==0:
+            raise CameraNotFound('No Camera Found')
+        elif cam.get_pNumberDevices==1:
+            self.camera=xiapi.camera()
+            self.camera.xiOpenDevice()
+            
         
         self.max_width = 0
         self.max_height = 0
-        width = cam.get_width
-        height = cam.get_height
+        width = cam.get_width()
+        height = cam.get_height()
         offsetX=cam.get_offsetX()
         offsetY=cam.get_offsetY()
         self.X = (offsetX,offsetX+width)
@@ -43,6 +50,7 @@ class Camera(BaseCamera):
         self.friendly_name = None
         self.max_width = self.GetCCDWidth()
         self.max_height = self.GetCCDHeight()
+        self.camera.trigger_software
         return True
 
     @not_implemented
@@ -50,6 +58,13 @@ class Camera(BaseCamera):
         """
         Triggers the camera.
         """
+        if self.camera.get_acquisition_status=='XI_ON':
+            logger.warning('Triggering an already grabbing camera')
+        else:
+            if self.mode == self.MODE_CONTINUOUS:
+                #grab images
+            elif self.mode == self.MODE_SINGLE_SHOT:
+                #grab an image
         pass
 
     @not_implemented
@@ -62,7 +77,7 @@ class Camera(BaseCamera):
         if mode == self.MODE_CONTINUOUS:
             #find and add way to change acq mode
         elif mode == self.MODE_SINGLE_SHOT:
-            #do the same for single show
+            #do the same for single shot
             
         self.mode = mode
 
