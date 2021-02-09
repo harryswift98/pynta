@@ -63,6 +63,7 @@ class Camera(BaseCamera):
         else:
             if self.mode == self.MODE_CONTINUOUS:
                 #grab images
+                
             elif self.mode == self.MODE_SINGLE_SHOT:
                 #grab an image
         pass
@@ -76,8 +77,10 @@ class Camera(BaseCamera):
         """
         if mode == self.MODE_CONTINUOUS:
             #find and add way to change acq mode
+            self.camera.set_trigger_selector(XI_TRIG_SEL_ACQUISITION_START)
         elif mode == self.MODE_SINGLE_SHOT:
             #do the same for single shot
+            self.camera.set_trigger_selector(XI_TRIG_SEL_FRAME_START)
             
         self.mode = mode
 
@@ -86,6 +89,7 @@ class Camera(BaseCamera):
         """
         Checks if the acquisition in the camera is over.
         """
+        
         pass
 
     #@not_implemented
@@ -129,11 +133,12 @@ class Camera(BaseCamera):
         """
         pass
 
-    @not_implemented
+    #@not_implemented
     def getSerialNumber(self):
         """Returns the serial number of the camera.
         """
-        pass
+        self.SerialNumber= self.camera.get_device_sn
+        return self.SerialNumber
 
     @not_implemented
     def GetCCDWidth(self):
@@ -152,6 +157,7 @@ class Camera(BaseCamera):
     @not_implemented
     def stopAcq(self):
         """Stops the acquisition without closing the connection to the camera."""
+        
         pass
 
     @not_implemented
