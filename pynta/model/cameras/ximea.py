@@ -39,12 +39,12 @@ class Camera(BaseCamera):
             self.camera.xiOpenDevice()
             
         
-        self.max_width = 0
+        self.max_width = 
         self.max_height = 0
-        width = cam.get_width()
-        height = cam.get_height()
-        offsetX=cam.get_offsetX()
-        offsetY=cam.get_offsetY()
+        width = self.camera.get_width()
+        height = self.camera.get_height()
+        offsetX=self.camera.get_offsetX()
+        offsetY=self.camera.get_offsetY()
         self.X = (offsetX,offsetX+width)
         self.Y = (offsetY,offsetY+height)
         self.friendly_name = None
@@ -145,29 +145,32 @@ class Camera(BaseCamera):
         """
         Returns the CCD width in pixels
         """
-        pass
+        return self.X
 
     @not_implemented
     def GetCCDHeight(self):
         """
         Returns: the CCD height in pixels
         """
-        pass
+        return self.Y
 
     @not_implemented
     def stopAcq(self):
         """Stops the acquisition without closing the connection to the camera."""
+        self.camera.xiStopAcquisition
         
-        pass
 
     @not_implemented
     def set_binning(self, xbin, ybin):
         """
         Sets the binning of the camera if supported. Has to check if binning in X/Y can be different or not, etc.
-
+        
         :param xbin:
         :param ybin:
+        self.camera.set_binning_horizontal(xbin)
+        self.camera.set_binning_vertical(ybin)
         :return:
+        
         """
         pass
 
@@ -176,11 +179,13 @@ class Camera(BaseCamera):
         """
         Clears the binning of the camera to its default value.
         """
+        self.camera.set_binning_horizontal(1)
+        self.camera.set_binning_vertical(1)
         pass
 
     @not_implemented
     def stop_camera(self):
         """Stops the acquisition and closes the connection with the camera.
         """
-        pass
+        self.camera.xiCloseDevice
 
