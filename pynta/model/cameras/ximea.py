@@ -113,7 +113,27 @@ class Camera(BaseCamera):
         """
         Reads the camera
         """
-        pass
+        if self.camera.get_acqisition_status == XI_OFF:
+            raise WrongCameraState('You need to trigger the camera before reading from it')
+        
+        if self.mode == self.MODE_SINGLE_SHOT:
+            self.camera.xiGetimage(img)
+            self.camera.xiStopAcquisition
+            
+        else:
+            frames= []
+            nframes= self.camrea.xiGetImage(acq_nframe)
+            logger.debug(f'{self.camrea.xiGetImage(acq_nframe)} frames available')
+            if nframes:
+                frames=[None]*nframes
+                for i in range(nframes):
+                    frames[i] = 
+                    
+                
+                        
+            
+            
+            
 
     @not_implemented
     def set_ROI(self, X, Y):
