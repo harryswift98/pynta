@@ -39,8 +39,8 @@ class Camera(BaseCamera):
             self.camera.xiOpenDevice()
             
         
-        self.max_width = 
-        self.max_height = 0
+        self.max_width = self.camera.get_width(XI_PRM_INFO_MAX)
+        self.max_height = self.camera.get_height(XI_PRM_INFO_MAX)
         width = self.camera.get_width()
         height = self.camera.get_height()
         offsetX=self.camera.get_offsetX()
@@ -58,7 +58,7 @@ class Camera(BaseCamera):
         """
         Triggers the camera.
         """
-        if self.camera.get_acquisition_status=='XI_ON':
+        if self.camera.get_acquisition_status == 'XI_ON':
             logger.warning('Triggering an already grabbing camera')
         else:
             if self.mode == self.MODE_CONTINUOUS:
@@ -82,6 +82,7 @@ class Camera(BaseCamera):
             #do the same for single shot
             self.camera.set_trigger_selector(XI_TRIG_SEL_FRAME_START)
             
+        self.camera.xiStartAcquisition    
         self.mode = mode
 
     @not_implemented
@@ -135,44 +136,71 @@ class Camera(BaseCamera):
             
             
 
-    @not_implemented
-    def set_ROI(self, X, Y):
-        """ Sets up the ROI. Not all cameras are 0-indexed, so this is an important
-        place to define the proper ROI.
+    #@not_implemented
+    def set_ROI(self, X: Tuple[int, int], Y: Tuple[int, int]):
+       
+        width = abs(X[1]-X[0])+1
+        width = int(width-width%4)
+        x_pos = int(X[0]-X[0]%4)
+        height = int(abs(Y[1]-Y[0])+1)
+        y_pos = int(Y[0]-Y[0]%2)
+        logger.info(f'Updating ROI: (x, y, width, height) = ({x_pos}, {y_pos}, {width}, {height})')
+        if x_pos+width > self.max_width:
+            raise CameraException('ROI width bigger than camera area')
+        if y_pos+height > self.max_height:
+            raise CameraException('ROI height bigger than camera area')
 
-        :param list X: array type with the coordinates for the ROI X[0], X[1]
-        :param list Y: array type with the coordinates for the ROI Y[0], Y[1]
-        :return: X, Y lists with the current ROI information
-        """
-        return X, Y
+        # First set offset to minimum, to avoid problems when going to a bigger size
+        self.clear_ROI()
+        logger.debug(f'Setting width to {width}')
+        self.camera.set_width(width)
+        logger.debug(f'Setting X offset to {x_pos}')
+        self.camera.set_offsetX(x_pos)
+        logger.debug(f'Setting Height to {height}')
+        self.camera.set_height(height)
+        logger.debug(f'Setting Y offset to {y_pos}')
+        self.camera.set_offsetY(y_pos)
+        self.X = (x_pos, x_pos+width)
+        self.Y = (y_pos, y_pos+width)
+        self.width = self.camera.get_width()
+        self.height = self.camera.get_height()
+        return self.width, self.height
+
+    def clear_ROI(self):
+        """ Resets the ROI to the maximum area of the camera"""
+        self.camera.set_offsetX(XI_PRM_INFO_MIN)
+        self.camera.set_offsetY(XI_PRM_INFO_MIN)
+        self.camera.set_width(XI_PRM_INFO_MAX)
+        self.camera.set_height(XI_PRM_INFO_MAX)
 
 
     @not_implemented
     def get_size(self):
         """Returns the size in pixels of the image being acquired. This is useful for checking the ROI settings.
         """
-        pass
+        pixels = self.camera.xiGetImage(height) * self.camera
+        return pixels
 
     #@not_implemented
     def getSerialNumber(self):
         """Returns the serial number of the camera.
         """
-        self.SerialNumber= self.camera.get_device_sn
-        return self.SerialNumber
+        return self.camera.get_device_sn
 
     @not_implemented
     def GetCCDWidth(self):
         """
         Returns the CCD width in pixels
         """
-        return self.X
+        return self.camera.get_width(XI_PRM_INFO_MAX)
 
     @not_implemented
     def GetCCDHeight(self):
         """
         Returns: the CCD height in pixels
         """
-        return self.Y
+        
+        return self.camera.get_height(XI_PRM_INFO_MAX)
 
     @not_implemented
     def stopAcq(self):
