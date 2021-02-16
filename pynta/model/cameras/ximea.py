@@ -6,7 +6,6 @@ import numpy as np
 from ximea import xiapi
 from pynta.model.cameras.base_camera import BaseCamera
 from pynta.model.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
-cam=xiapi.camera()
 #here add in all of the imports
 
 
@@ -25,7 +24,6 @@ class Camera(BaseCamera):
         self.friendly_name = None
         
         
-    @not_implemented
     def initialize(self):
         """
         Initializes the camera.
@@ -35,7 +33,8 @@ class Camera(BaseCamera):
         if cam.get_pNumberDevices==0:
             raise CameraNotFound('No Camera Found')
         elif cam.get_pNumberDevices==1:
-            self.camera=xiapi.camera()
+            self.camera = xiapi.camera()
+            self.image = xiapi.image()
             self.camera.xiOpenDevice()
             
         
@@ -53,7 +52,6 @@ class Camera(BaseCamera):
         self.camera.trigger_software
         return True
 
-    @not_implemented
     def trigger_camera(self):
         """
         Triggers the camera.
@@ -68,7 +66,6 @@ class Camera(BaseCamera):
                 #grab an image
         pass
 
-    @not_implemented
     def set_acquisition_mode(self, mode):
         """
         Set the readout mode of the camera: Single or continuous.
@@ -85,15 +82,9 @@ class Camera(BaseCamera):
         self.camera.xiStartAcquisition    
         self.mode = mode
 
-    @not_implemented
-    def acquisition_ready(self):
-        """
-        Checks if the acquisition in the camera is over.
-        """
         
-        pass
+        
 
-    #@not_implemented
     def set_exposure(self, exposure):
         """
         Sets the exposure of the camera.
@@ -101,7 +92,6 @@ class Camera(BaseCamera):
         self.cam.set_exposure(exposure)
         self.exposure = exposure
 
-    #@not_implemented
     def get_exposure(self):
         """
         Gets the exposure time of the camera.
@@ -109,7 +99,6 @@ class Camera(BaseCamera):
         self.exposure=self.cam.get_exposure()
         return self.exposure
 
-    @not_implemented
     def read_camera(self):
         """
         Reads the camera
@@ -123,12 +112,16 @@ class Camera(BaseCamera):
             
         else:
             frames= []
-            nframes= self.camrea.xiGetImage(acq_nframe)
-            logger.debug(f'{self.camrea.xiGetImage(acq_nframe)} frames available')
+            nframes= self.image.xiGetImage(acq_nframe)
+            logger.debug(f'{self.image.xiGetImage(acq_nframe)} frames available')
             if nframes:
                 frames=[None]*nframes
                 for i in range(nframes):
-                    frames[i] = 
+                    grab = self.image.xiGetImage(img)
+                    if grab:
+                        frames[i] = grab
+            return [i.T for i in frames]  # Transpose to have the correct size            
+                                        
                     
                 
                         
@@ -136,7 +129,6 @@ class Camera(BaseCamera):
             
             
 
-    #@not_implemented
     def set_ROI(self, X: Tuple[int, int], Y: Tuple[int, int]):
        
         width = abs(X[1]-X[0])+1
@@ -174,27 +166,23 @@ class Camera(BaseCamera):
         self.camera.set_height(XI_PRM_INFO_MAX)
 
 
-    @not_implemented
     def get_size(self):
         """Returns the size in pixels of the image being acquired. This is useful for checking the ROI settings.
         """
         pixels = self.camera.xiGetImage(height) * self.camera
         return pixels
 
-    #@not_implemented
     def getSerialNumber(self):
         """Returns the serial number of the camera.
         """
         return self.camera.get_device_sn
 
-    @not_implemented
     def GetCCDWidth(self):
         """
         Returns the CCD width in pixels
         """
         return self.camera.get_width(XI_PRM_INFO_MAX)
 
-    @not_implemented
     def GetCCDHeight(self):
         """
         Returns: the CCD height in pixels
@@ -202,13 +190,11 @@ class Camera(BaseCamera):
         
         return self.camera.get_height(XI_PRM_INFO_MAX)
 
-    @not_implemented
     def stopAcq(self):
         """Stops the acquisition without closing the connection to the camera."""
         self.camera.xiStopAcquisition
         
 
-    @not_implemented
     def set_binning(self, xbin, ybin):
         """
         Sets the binning of the camera if supported. Has to check if binning in X/Y can be different or not, etc.
@@ -222,7 +208,6 @@ class Camera(BaseCamera):
         """
         pass
 
-    @not_implemented
     def clear_binning(self):
         """
         Clears the binning of the camera to its default value.
@@ -231,7 +216,6 @@ class Camera(BaseCamera):
         self.camera.set_binning_vertical(1)
         pass
 
-    @not_implemented
     def stop_camera(self):
         """Stops the acquisition and closes the connection with the camera.
         """
