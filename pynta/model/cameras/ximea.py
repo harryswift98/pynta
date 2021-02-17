@@ -34,14 +34,10 @@ class Camera(BaseCamera):
         #need to figure out what happens if >2 devices
         self.camera = xiapi.Camera()
         self.image = xiapi.Image()
-        if self.camera.get_number_devices() == 0:
-            raise CameraNotFound('No Camera Found')
+        
+        
             
-        elif self.camera.get_number_devices == 1:
-            self.camera.open_device()
-            
-        else:
-            print("function isnt working")
+        
             
         self.camera.open_device()
         self.max_width = self.camera.get_width_maximum()
@@ -53,9 +49,7 @@ class Camera(BaseCamera):
         self.X = (offsetX,offsetX+width)
         self.Y = (offsetY,offsetY+height)
         self.friendly_name = None
-        self.max_width = self.GetCCDWidth()
-        self.max_height = self.GetCCDHeight()
-        self.camera.set_trigger_source(XI_TRG_SOFTWARE)
+        
         return True
 
     def trigger_camera(self):
@@ -169,17 +163,17 @@ class Camera(BaseCamera):
 
     def clear_ROI(self):
         """ Resets the ROI to the maximum area of the camera"""
-        self.camera.set_offsetX(XI_PRM_INFO_MIN)
-        self.camera.set_offsetY(XI_PRM_INFO_MIN)
-        self.camera.set_width(XI_PRM_INFO_MAX)
-        self.camera.set_height(XI_PRM_INFO_MAX)
+        self.camera.set_offsetX_minimum
+        self.camera.set_offsetY_minimum
+        self.camera.set_width_maximum
+        self.camera.set_height_maximum
 
 
     def get_size(self):
         """Returns the size in pixels of the image being acquired. This is useful for checking the ROI settings.
         """
-        pixels = self.camera.xiGetImage(height) * self.camera
-        return pixels
+        
+        return self.camera.get_width, self.camera.get_height
 
     def getSerialNumber(self):
         """Returns the serial number of the camera.
