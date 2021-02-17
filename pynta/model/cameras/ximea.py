@@ -39,9 +39,9 @@ class Camera(BaseCamera):
             
         elif self.camera.get_number_devices == 1:
             self.camera.open_device()
-            print("camera poggies")
+            
         else:
-            print("function isnt working sadge")
+            print("function isnt working")
             
         self.camera.open_device()
         self.max_width = self.camera.get_width_maximum()
