@@ -4,9 +4,11 @@ The driver file to use a camera that uses xiapi
 """
 import numpy as np
 from ximea import xiapi
+from ximea import xidefs
 from pynta.model.cameras.base_camera import BaseCamera
 from pynta.model.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
 #here add in all of the imports
+
 
 
 #impliment all of these functions
@@ -30,16 +32,20 @@ class Camera(BaseCamera):
         """
         #function checks if camera is attached and opens it if it finds one
         #need to figure out what happens if >2 devices
-        if cam.get_pNumberDevices==0:
+        self.camera = xiapi.Camera()
+        self.image = xiapi.Image()
+        if self.camera.get_number_devices() == 0:
             raise CameraNotFound('No Camera Found')
-        elif cam.get_pNumberDevices==1:
-            self.camera = xiapi.camera()
-            self.image = xiapi.image()
-            self.camera.xiOpenDevice()
             
-        
-        self.max_width = self.camera.get_width(XI_PRM_INFO_MAX)
-        self.max_height = self.camera.get_height(XI_PRM_INFO_MAX)
+        elif self.camera.get_number_devices == 1:
+            self.camera.open_device()
+            print("camera poggies")
+        else:
+            print("function isnt working sadge")
+            
+        self.camera.open_device()
+        self.max_width = self.camera.get_width_maximum()
+        self.max_height = self.camera.get_height_maximum()
         width = self.camera.get_width()
         height = self.camera.get_height()
         offsetX=self.camera.get_offsetX()
@@ -49,7 +55,7 @@ class Camera(BaseCamera):
         self.friendly_name = None
         self.max_width = self.GetCCDWidth()
         self.max_height = self.GetCCDHeight()
-        self.camera.trigger_software
+        self.camera.set_trigger_source(XI_TRG_SOFTWARE)
         return True
 
     def trigger_camera(self):
@@ -61,11 +67,14 @@ class Camera(BaseCamera):
         else:
             if self.mode == self.MODE_CONTINUOUS:
                 #grab images
+                q = 3
+                print(q)
                 
-            elif self.mode == self.MODE_SINGLE_SHOT:
+            elif  self.mode == self.MODE_SINGLE_SHOT:
                 #grab an image
-        pass
-
+                q=2
+                print(q)
+    
     def set_acquisition_mode(self, mode):
         """
         Set the readout mode of the camera: Single or continuous.
@@ -129,7 +138,7 @@ class Camera(BaseCamera):
             
             
 
-    def set_ROI(self, X: Tuple[int, int], Y: Tuple[int, int]):
+    def set_ROI(self, X: [int, int], Y: [int, int]):
        
         width = abs(X[1]-X[0])+1
         width = int(width-width%4)
@@ -181,14 +190,14 @@ class Camera(BaseCamera):
         """
         Returns the CCD width in pixels
         """
-        return self.camera.get_width(XI_PRM_INFO_MAX)
+        return self.camera.get_width_maximum()
 
     def GetCCDHeight(self):
         """
         Returns: the CCD height in pixels
         """
         
-        return self.camera.get_height(XI_PRM_INFO_MAX)
+        return self.camera.get_height_maximum()
 
     def stopAcq(self):
         """Stops the acquisition without closing the connection to the camera."""
@@ -220,4 +229,3 @@ class Camera(BaseCamera):
         """Stops the acquisition and closes the connection with the camera.
         """
         self.camera.xiCloseDevice
-
