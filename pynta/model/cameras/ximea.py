@@ -34,11 +34,7 @@ class Camera(BaseCamera):
         #need to figure out what happens if >2 devices
         self.camera = xiapi.Camera()
         self.image = xiapi.Image()
-        
-        
-            
-        
-            
+                           
         self.camera.open_device()
         self.max_width = self.camera.get_width_maximum()
         self.max_height = self.camera.get_height_maximum()
@@ -49,7 +45,8 @@ class Camera(BaseCamera):
         self.X = (offsetX,offsetX+width)
         self.Y = (offsetY,offsetY+height)
         self.friendly_name = None
-        
+        self.camera.set_trigger_source("XI_TRG_SOFTWARE") #sets software trigger
+
         return True
 
     def trigger_camera(self):
@@ -57,17 +54,17 @@ class Camera(BaseCamera):
         Triggers the camera.
         """
         if self.camera.get_acquisition_status == 'XI_ON':
-            logger.warning('Triggering an already grabbing camera')
+            print("camera already acq")
         else:
             if self.mode == self.MODE_CONTINUOUS:
                 #grab images
-                q = 3
-                print(q)
+                q=3
                 
             elif  self.mode == self.MODE_SINGLE_SHOT:
                 #grab an image
                 q=2
-                print(q)
+        print(q)
+        self.camera.trigger_software
     
     def set_acquisition_mode(self, mode):
         """
@@ -77,12 +74,12 @@ class Camera(BaseCamera):
         """
         if mode == self.MODE_CONTINUOUS:
             #find and add way to change acq mode
-            self.camera.set_trigger_selector(XI_TRIG_SEL_ACQUISITION_START)
+            self.camera.set_trigger_selector("XI_TRIG_SEL_ACQUISITION_START")
         elif mode == self.MODE_SINGLE_SHOT:
             #do the same for single shot
-            self.camera.set_trigger_selector(XI_TRIG_SEL_FRAME_START)
+            self.camera.set_trigger_selector("XI_TRIG_SEL_FRAME_START")
             
-        self.camera.xiStartAcquisition    
+        self.camera.start_acquisition    
         self.mode = mode
 
         
@@ -92,7 +89,7 @@ class Camera(BaseCamera):
         """
         Sets the exposure of the camera.
         """
-        self.cam.set_exposure(exposure)
+        self.camera.set_exposure(exposure)
         self.exposure = exposure
 
     def get_exposure(self):
@@ -111,12 +108,10 @@ class Camera(BaseCamera):
         
         if self.mode == self.MODE_SINGLE_SHOT:
             self.camera.xiGetimage(img)
-            self.camera.xiStopAcquisition
             
         else:
             frames= []
             nframes= self.image.xiGetImage(acq_nframe)
-            logger.debug(f'{self.image.xiGetImage(acq_nframe)} frames available')
             if nframes:
                 frames=[None]*nframes
                 for i in range(nframes):
@@ -139,7 +134,6 @@ class Camera(BaseCamera):
         x_pos = int(X[0]-X[0]%4)
         height = int(abs(Y[1]-Y[0])+1)
         y_pos = int(Y[0]-Y[0]%2)
-        logger.info(f'Updating ROI: (x, y, width, height) = ({x_pos}, {y_pos}, {width}, {height})')
         if x_pos+width > self.max_width:
             raise CameraException('ROI width bigger than camera area')
         if y_pos+height > self.max_height:
@@ -147,13 +141,9 @@ class Camera(BaseCamera):
 
         # First set offset to minimum, to avoid problems when going to a bigger size
         self.clear_ROI()
-        logger.debug(f'Setting width to {width}')
         self.camera.set_width(width)
-        logger.debug(f'Setting X offset to {x_pos}')
         self.camera.set_offsetX(x_pos)
-        logger.debug(f'Setting Height to {height}')
         self.camera.set_height(height)
-        logger.debug(f'Setting Y offset to {y_pos}')
         self.camera.set_offsetY(y_pos)
         self.X = (x_pos, x_pos+width)
         self.Y = (y_pos, y_pos+width)
@@ -163,10 +153,10 @@ class Camera(BaseCamera):
 
     def clear_ROI(self):
         """ Resets the ROI to the maximum area of the camera"""
-        self.camera.set_offsetX_minimum
-        self.camera.set_offsetY_minimum
-        self.camera.set_width_maximum
-        self.camera.set_height_maximum
+        self.camera.set_offsetX(0)
+        self.camera.set_offsetY(0)
+        self.camera.set_width(self.max_width)
+        self.camera.set_height(self.max_height)
 
 
     def get_size(self):
@@ -195,7 +185,7 @@ class Camera(BaseCamera):
 
     def stopAcq(self):
         """Stops the acquisition without closing the connection to the camera."""
-        self.camera.xiStopAcquisition
+        self.camera.stop_acquisition
         
 
     def set_binning(self, xbin, ybin):
@@ -222,4 +212,5 @@ class Camera(BaseCamera):
     def stop_camera(self):
         """Stops the acquisition and closes the connection with the camera.
         """
-        self.camera.xiCloseDevice
+        self.camera.close_device
+        
