@@ -7,6 +7,8 @@ from ximea import xiapi
 from ximea import xidefs
 from pynta.model.cameras.base_camera import BaseCamera
 from pynta.model.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
+from pint import UnitRegistry
+ureg = UnitRegistry
 #here add in all of the imports
 
 
@@ -89,7 +91,10 @@ class Camera(BaseCamera):
         """
         Sets the exposure of the camera.
         """
-        self.camera.set_exposure(exposure)
+        exposure_magnitude=exposure
+        exposure_magnitude.to("usecond")
+        
+        self.camera.set_exposure(exposure_magnitude.magnitude)
         self.exposure = exposure
 
     def get_exposure(self):
