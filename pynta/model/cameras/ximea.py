@@ -35,8 +35,7 @@ class Camera(BaseCamera):
         #function checks if camera is attached and opens it if it finds one
         #need to figure out what happens if >2 devices
         self.camera = xiapi.Camera()
-        self.image = xiapi.Image()
-                           
+        self.image = xiapi.Image()                   
         self.camera.open_device()
         self.max_width = self.camera.get_width_maximum()
         self.max_height = self.camera.get_height_maximum()
@@ -60,13 +59,16 @@ class Camera(BaseCamera):
         else:
             if self.mode == self.MODE_CONTINUOUS:
                 #grab images
+                self.camera.start_acquisition()
+                self.camera.set_trigger_software(1)
+                self.camera.get_image(xiapi.Image())
                 q=3
                 
             elif  self.mode == self.MODE_SINGLE_SHOT:
                 #grab an image
                 q=2
         print(q)
-        self.camera.trigger_software
+        
     
     def set_acquisition_mode(self, mode):
         """
@@ -76,12 +78,12 @@ class Camera(BaseCamera):
         """
         if mode == self.MODE_CONTINUOUS:
             #find and add way to change acq mode
-            self.camera.set_trigger_selector("XI_TRIG_SEL_ACQUISITION_START")
+            self.camera.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")
         elif mode == self.MODE_SINGLE_SHOT:
             #do the same for single shot
-            self.camera.set_trigger_selector("XI_TRIG_SEL_FRAME_START")
+            self.camera.set_trigger_selector("XI_TRG_SEL_FRAME_START")
             
-        self.camera.start_acquisition    
+           
         self.mode = mode
 
         
@@ -108,19 +110,19 @@ class Camera(BaseCamera):
         """
         Reads the camera
         """
-        if self.camera.get_acqisition_status == XI_OFF:
+        if self.camera.get_acquisition_status == "XI_OFF":
             raise WrongCameraState('You need to trigger the camera before reading from it')
         
         if self.mode == self.MODE_SINGLE_SHOT:
-            self.camera.xiGetimage(img)
+            self.camera.xiGetimage(xiapi.Image())
             
         else:
             frames= []
-            nframes= self.image.xiGetImage(acq_nframe)
+            nframes= self.camera.get_image("acq_nframe")
             if nframes:
                 frames=[None]*nframes
                 for i in range(nframes):
-                    grab = self.image.xiGetImage(img)
+                    grab = self.camera.get_iamge(xiapi.Image())
                     if grab:
                         frames[i] = grab
             return [i.T for i in frames]  # Transpose to have the correct size            
