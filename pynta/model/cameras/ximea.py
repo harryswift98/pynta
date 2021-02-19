@@ -114,17 +114,23 @@ class Camera(BaseCamera):
             raise WrongCameraState('You need to trigger the camera before reading from it')
         
         if self.mode == self.MODE_SINGLE_SHOT:
-            self.camera.xiGetimage(xiapi.Image())
+            self.camera.get_image(self.image)
+            raw = self.camera.get_image_data_raw()
+            data = list(raw)
+            frames = [None]
+            frames[0] = data
             
         else:
-            frames= []
-            nframes= self.camera.get_image("acq_nframe")
+            frames = []
+            nframes = self.image.acq_nframe
             if nframes:
-                frames=[None]*nframes
+                frames = [None] * nframes 
                 for i in range(nframes):
-                    grab = self.camera.get_iamge(xiapi.Image())
-                    if grab:
-                        frames[i] = grab
+                    self.camera.get_image(self.image)
+                    raw = self.camera.get_image_data_raw()
+                    data = list(raw)
+                    frames[i] = data
+
             return [i.T for i in frames]  # Transpose to have the correct size            
                                         
                     
