@@ -54,9 +54,11 @@ class Camera(BaseCamera):
         except:
             a=5
             print(a)
+           
         self.camera.set_trigger_source("XI_TRG_SOFTWARE")#sets software trigger
         self.camera.set_gpo_selector("XI_GPO_PORT1")
         self.camera.set_gpo_mode("XI_GPO_EXPOSURE_ACTIVE")
+        self.camera.start_acquisition() 
 
         return True
 
@@ -72,11 +74,12 @@ class Camera(BaseCamera):
                 #grab images
                 self.camera.start_acquisition()
                 self.camera.set_trigger_software(1)
-                self.camera.get_image(xiapi.Image())
-                q=3
+                
                 
             elif  self.mode == self.MODE_SINGLE_SHOT:
                 #grab an image
+                #self.camera.start_acquisition()
+                self.camera.set_trigger_software(1)
                 q=2
         print(q)
         
@@ -90,11 +93,11 @@ class Camera(BaseCamera):
         if mode == self.MODE_CONTINUOUS:
             #find and add way to change acq mode
             #self.camera.set_trigger_selector("XI_TRG_SEL_ACQUISITION_START")
-            a=4
+            a=1
         elif mode == self.MODE_SINGLE_SHOT:
             #do the same for single shot
-            self.camera.set_trigger_selector("XI_TRG_SEL_FRAME_START")
-            
+            #self.camera.set_trigger_selector("XI_TRG_SEL_FRAME_START")
+            a=2
            
         self.mode = mode
 
@@ -119,11 +122,13 @@ class Camera(BaseCamera):
         
         if self.mode == self.MODE_SINGLE_SHOT:
             self.camera.get_image(self.image)
-            raw = self.camera.get_image_data_raw()
-            data = list(raw)
+            raw = self.image.get_image_data_numpy()
+            #data = np.array(raw, dtype=np.float32)
+            #data = np.array(data, dtype=np.int_)
+            data = raw
             frames = [None]
             frames[0] = data
-            return frames
+            #return data
             
             
         else:
@@ -133,11 +138,11 @@ class Camera(BaseCamera):
                 frames = [None] * nframes 
                 for i in range(nframes):
                     self.camera.get_image(self.image)
-                    raw = self.camera.get_image_data_raw()
+                    raw = self.image.get_image_data_raw().decode("utf-8")
                     data = list(raw)
                     frames[i] = data
 
-        return [i.T for i in frames]  # Transpose to have the correct size            
+        return [i for i in frames]  # Transpose to have the correct size            
                                         
                     
                 
@@ -238,12 +243,11 @@ if __name__ == '__main__':
 
     basler = Camera(0)
     basler.initialize()
-    basler.set_acquisition_mode(basler.MODE_CONTINUOUS)
-    basler.set_exposure(Q_('.02s'))
-    basler.trigger_camera()
-    print(len(basler.read_camera()))
+    #basler.set_acquisition_mode(basler.MODE_CONTINUOUS)
+    #basler.set_exposure(Q_('.02s'))
+    #basler.trigger_camera()
+    #print(len(basler.read_camera()))
     basler.set_acquisition_mode(basler.MODE_SINGLE_SHOT)
     basler.trigger_camera()
-    sleep(1)
     imgs = basler.read_camera()
     print(len(imgs))
