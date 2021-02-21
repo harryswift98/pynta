@@ -8,6 +8,8 @@ from ximea import xidefs
 from pynta.model.cameras.base_camera import BaseCamera
 from pynta.model.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
 from pint import UnitRegistry
+from pynta import Q_
+
 ureg = UnitRegistry
 #here add in all of the imports
 
@@ -35,7 +37,8 @@ class Camera(BaseCamera):
         #function checks if camera is attached and opens it if it finds one
         #need to figure out what happens if >2 devices
         self.camera = xiapi.Camera()
-        self.image = xiapi.Image()                   
+        self.image = xiapi.Image()  
+        self.camera.get_number_devices()                 
         self.camera.open_device()
         self.max_width = self.camera.get_width_maximum()
         self.max_height = self.camera.get_height_maximum()
@@ -46,7 +49,14 @@ class Camera(BaseCamera):
         self.X = (offsetX,offsetX+width)
         self.Y = (offsetY,offsetY+height)
         self.friendly_name = None
-        self.camera.set_trigger_source("XI_TRG_SOFTWARE") #sets software trigger
+        try:
+            self.camera.stop_acquisition()
+        except:
+            a=5
+            print(a)
+        self.camera.set_trigger_source("XI_TRG_SOFTWARE")#sets software trigger
+        self.camera.set_gpo_selector("XI_GPO_PORT1")
+        self.camera.set_gpo_mode("XI_GPO_EXPOSURE_ACTIVE")
 
         return True
 
@@ -57,6 +67,7 @@ class Camera(BaseCamera):
         if self.camera.get_acquisition_status == 'XI_ON':
             print("camera already acq")
         else:
+            #self.camera.start_acquisition()
             if self.mode == self.MODE_CONTINUOUS:
                 #grab images
                 self.camera.start_acquisition()
@@ -78,7 +89,8 @@ class Camera(BaseCamera):
         """
         if mode == self.MODE_CONTINUOUS:
             #find and add way to change acq mode
-            self.camera.set_acq_timing_mode("XI_ACQ_TIMING_MODE_FRAME_RATE")
+            #self.camera.set_trigger_selector("XI_TRG_SEL_ACQUISITION_START")
+            a=4
         elif mode == self.MODE_SINGLE_SHOT:
             #do the same for single shot
             self.camera.set_trigger_selector("XI_TRG_SEL_FRAME_START")
@@ -89,21 +101,13 @@ class Camera(BaseCamera):
         
         
 
-    def set_exposure(self, exposure):
-        """
-        Sets the exposure of the camera.
-        """
-        exposure_magnitude=exposure
-        exposure_magnitude.to("usecond")
-        
-        self.camera.set_exposure(exposure_magnitude.magnitude)
+    def set_exposure(self, exposure: Q_) -> Q_:
+        self.camera.set_exposure(exposure.m_as('us'))
         self.exposure = exposure
+        return self.get_exposure()
 
-    def get_exposure(self):
-        """
-        Gets the exposure time of the camera.
-        """
-        self.exposure=self.cam.get_exposure()
+    def get_exposure(self) -> Q_:
+        self.exposure = self.camera.get_exposure() * Q_('us')
         return self.exposure
 
     def read_camera(self):
@@ -119,6 +123,8 @@ class Camera(BaseCamera):
             data = list(raw)
             frames = [None]
             frames[0] = data
+            return frames
+            
             
         else:
             frames = []
@@ -131,7 +137,7 @@ class Camera(BaseCamera):
                     data = list(raw)
                     frames[i] = data
 
-            return [i.T for i in frames]  # Transpose to have the correct size            
+        return [i.T for i in frames]  # Transpose to have the correct size            
                                         
                     
                 
@@ -227,3 +233,17 @@ class Camera(BaseCamera):
         """
         self.camera.close_device
         
+if __name__ == '__main__':
+    from time import sleep
+
+    basler = Camera(0)
+    basler.initialize()
+    basler.set_acquisition_mode(basler.MODE_CONTINUOUS)
+    basler.set_exposure(Q_('.02s'))
+    basler.trigger_camera()
+    print(len(basler.read_camera()))
+    basler.set_acquisition_mode(basler.MODE_SINGLE_SHOT)
+    basler.trigger_camera()
+    sleep(1)
+    imgs = basler.read_camera()
+    print(len(imgs))
