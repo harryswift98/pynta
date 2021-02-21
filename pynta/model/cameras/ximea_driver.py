@@ -8,6 +8,7 @@ from ximea import xidefs
 from pynta.model.cameras.base_camera import BaseCamera
 from pynta.model.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
 from pint import UnitRegistry
+import time
 from pynta import Q_
 
 ureg = UnitRegistry
@@ -72,7 +73,6 @@ class Camera(BaseCamera):
             #self.camera.start_acquisition()
             if self.mode == self.MODE_CONTINUOUS:
                 #grab images
-                self.camera.start_acquisition()
                 self.camera.set_trigger_software(1)
                 
                 
@@ -81,7 +81,6 @@ class Camera(BaseCamera):
                 #self.camera.start_acquisition()
                 self.camera.set_trigger_software(1)
                 q=2
-        print(q)
         
     
     def set_acquisition_mode(self, mode):
@@ -127,20 +126,24 @@ class Camera(BaseCamera):
             #data = np.array(data, dtype=np.int_)
             data = raw
             frames = [None]
+            data = np.transpose(data)
             frames[0] = data
             #return data
             
             
         else:
             frames = []
-            nframes = self.image.acq_nframe
+            nframes = self.camera.get_buffers_queue_size_maximum()
             if nframes:
-                frames = [None] * nframes 
-                for i in range(nframes):
-                    self.camera.get_image(self.image)
-                    raw = self.image.get_image_data_raw().decode("utf-8")
-                    data = list(raw)
-                    frames[i] = data
+                frames = [None]
+                
+                time.sleep(1/20)
+                self.camera.set_trigger_software(1)
+                self.camera.get_image(self.image)
+                raw = self.image.get_image_data_numpy()
+                data = (raw)
+                data = np.transpose(data)
+                frames[0] = data
 
         return [i for i in frames]  # Transpose to have the correct size            
                                         
@@ -243,11 +246,14 @@ if __name__ == '__main__':
 
     basler = Camera(0)
     basler.initialize()
-    #basler.set_acquisition_mode(basler.MODE_CONTINUOUS)
-    #basler.set_exposure(Q_('.02s'))
-    #basler.trigger_camera()
-    #print(len(basler.read_camera()))
-    basler.set_acquisition_mode(basler.MODE_SINGLE_SHOT)
+    basler.set_acquisition_mode(basler.MODE_CONTINUOUS)
+    basler.set_exposure(Q_('.02s'))
     basler.trigger_camera()
-    imgs = basler.read_camera()
-    print(len(imgs))
+    print(len(basler.read_camera()))
+    print(basler.get_exposure()* Q_("s"))
+    #print(xiapi.Camera.get_buffers_queue_size_maximum(self))
+    #basler.set_acquisition_mode(basler.MODE_SINGLE_SHOT)
+    #basler.trigger_camera()
+    #imgs = basler.read_camera()
+    #print(len(imgs))
+    basler.stop_camera
