@@ -4,15 +4,11 @@ The driver file to use a camera that uses xiapi
 """
 import numpy as np
 from ximea import xiapi
-from ximea import xidefs
 from pynta.model.cameras.base_camera import BaseCamera
 from pynta.model.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
-from pint import UnitRegistry
 import time
 from pynta import Q_
 
-ureg = UnitRegistry
-#here add in all of the imports
 
 
 
@@ -37,29 +33,27 @@ class Camera(BaseCamera):
         """
         #function checks if camera is attached and opens it if it finds one
         #need to figure out what happens if >2 devices
+        
         self.camera = xiapi.Camera()
         self.image = xiapi.Image()  
-        self.camera.get_number_devices()                 
-        self.camera.open_device()
-        self.max_width = self.camera.get_width_maximum()
-        self.max_height = self.camera.get_height_maximum()
-        width = self.camera.get_width()
-        height = self.camera.get_height()
-        offsetX=self.camera.get_offsetX()
-        offsetY=self.camera.get_offsetY()
-        self.X = (offsetX,offsetX+width)
-        self.Y = (offsetY,offsetY+height)
-        self.friendly_name = None
-        try:
-            self.camera.stop_acquisition()
-        except:
-            a=5
-            print(a)
-           
-        self.camera.set_trigger_source("XI_TRG_SOFTWARE")#sets software trigger
-        self.camera.set_gpo_selector("XI_GPO_PORT1")
-        self.camera.set_gpo_mode("XI_GPO_EXPOSURE_ACTIVE")
-        self.camera.start_acquisition() 
+        if self.camera.get_number_devices() == 0:
+            raise(CameraNotFound('No Camera Found'))
+            
+        else:         
+            self.camera.open_device()
+            self.max_width = self.camera.get_width_maximum()
+            self.max_height = self.camera.get_height_maximum()
+            width = self.camera.get_width()
+            height = self.camera.get_height()
+            offsetX=self.camera.get_offsetX()
+            offsetY=self.camera.get_offsetY()
+            self.X = (offsetX,offsetX+width)
+            self.Y = (offsetY,offsetY+height)
+            self.friendly_name = None
+            self.camera.set_trigger_source("XI_TRG_SOFTWARE")
+            self.camera.set_gpo_selector("XI_GPO_PORT1")
+            self.camera.set_gpo_mode("XI_GPO_EXPOSURE_ACTIVE")
+            self.camera.start_acquisition() 
 
         return True
 
@@ -67,20 +61,9 @@ class Camera(BaseCamera):
         """
         Triggers the camera.
         """
-        if self.camera.get_acquisition_status == 'XI_ON':
-            print("camera already acq")
-        else:
-            #self.camera.start_acquisition()
-            if self.mode == self.MODE_CONTINUOUS:
-                #grab images
-                self.camera.set_trigger_software(1)
                 
-                
-            elif  self.mode == self.MODE_SINGLE_SHOT:
-                #grab an image
-                #self.camera.start_acquisition()
-                self.camera.set_trigger_software(1)
-                q=2
+        if  self.mode == self.MODE_SINGLE_SHOT:
+            self.camera.set_trigger_software(1)
         
     
     def set_acquisition_mode(self, mode):
@@ -89,14 +72,6 @@ class Camera(BaseCamera):
         :param int mode: One of self.MODE_CONTINUOUS, self.MODE_SINGLE_SHOT
         :return:
         """
-        if mode == self.MODE_CONTINUOUS:
-            #find and add way to change acq mode
-            #self.camera.set_trigger_selector("XI_TRG_SEL_ACQUISITION_START")
-            a=1
-        elif mode == self.MODE_SINGLE_SHOT:
-            #do the same for single shot
-            #self.camera.set_trigger_selector("XI_TRG_SEL_FRAME_START")
-            a=2
            
         self.mode = mode
 
@@ -121,10 +96,7 @@ class Camera(BaseCamera):
         
         if self.mode == self.MODE_SINGLE_SHOT:
             self.camera.get_image(self.image)
-            raw = self.image.get_image_data_numpy()
-            #data = np.array(raw, dtype=np.float32)
-            #data = np.array(data, dtype=np.int_)
-            data = raw
+            data = self.image.get_image_data_numpy()
             frames = [None]
             data = np.transpose(data)
             frames[0] = data
@@ -137,11 +109,10 @@ class Camera(BaseCamera):
             if nframes:
                 frames = [None]
                 
-                time.sleep(1/20)
+                time.sleep(self.camera.get_exposure()*1.1*10**-6)
                 self.camera.set_trigger_software(1)
                 self.camera.get_image(self.image)
-                raw = self.image.get_image_data_numpy()
-                data = (raw)
+                data = self.image.get_image_data_numpy()
                 data = np.transpose(data)
                 frames[0] = data
 
@@ -242,18 +213,18 @@ class Camera(BaseCamera):
         self.camera.close_device
         
 if __name__ == '__main__':
-    from time import sleep
 
     basler = Camera(0)
     basler.initialize()
+
+    
     basler.set_acquisition_mode(basler.MODE_CONTINUOUS)
     basler.set_exposure(Q_('.02s'))
     basler.trigger_camera()
     print(len(basler.read_camera()))
     print(basler.get_exposure()* Q_("s"))
-    #print(xiapi.Camera.get_buffers_queue_size_maximum(self))
-    #basler.set_acquisition_mode(basler.MODE_SINGLE_SHOT)
-    #basler.trigger_camera()
-    #imgs = basler.read_camera()
-    #print(len(imgs))
+    basler.set_acquisition_mode(basler.MODE_SINGLE_SHOT)
+    basler.trigger_camera()
+    imgs = basler.read_camera()
+    print(len(imgs))
     basler.stop_camera
